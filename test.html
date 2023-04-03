@@ -1,0 +1,618 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    <script type="text/javascript" src="./echarts.js"></script>
+  </head>
+
+  <body>
+    <div class="main-box">
+      <div class="three-box" id="chart1"></div>
+      <div class="three-box" id="chart2"></div>
+      <div class="three-box" id="chart3"></div>
+    </div>
+  </body>
+  <style>
+    body,
+    html {
+      height: 100%;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .main-box {
+      height: 100%;
+      /* height: calc(100vh); */
+      width: 100%;
+      display: flex;
+    }
+
+    .three-box {
+      height: 100%;
+      width: 33.33%;
+    }
+  </style>
+  <script type="text/javascript">
+    var sssr = "";
+    var fssr = "";
+    var dateTitle = "";
+    var bqAmtText = "";
+
+    var xmlHttpRequest = createXmlHttpRequest();
+    xmlHttpRequest.open(
+      "POST",
+      "http://" + window.location.host + "/micro_api/tax_server/embed/date",
+      true
+    );
+    xmlHttpRequest.setRequestHeader(
+      "Content-Type",
+      "application/json; charset=utf-8"
+    );
+    var req = {
+      targetPage: "KBSR_DAY",
+    };
+    xmlHttpRequest.send(JSON.stringify(req));
+    xmlHttpRequest.onreadystatechange = function () {
+      if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+        var responseData = JSON.parse(xmlHttpRequest.responseText).data;
+        getLeftText(responseData.maxDate);
+        getRightText(responseData.maxDate);
+        getAnnular(responseData.maxDate);
+        getMap(responseData.maxDate);
+      }
+    };
+
+    function getLeftText(maxDate) {
+      var xmlHttpRequest = createXmlHttpRequest();
+      xmlHttpRequest.open(
+        "POST",
+        "http://" +
+          window.location.host +
+          "/micro_api/tax_server/embed/get/left/text",
+        true
+      );
+      xmlHttpRequest.setRequestHeader(
+        "Content-Type",
+        "application/json; charset=utf-8"
+      );
+      var req = {
+        rq: maxDate,
+      };
+      xmlHttpRequest.send(JSON.stringify(req));
+      xmlHttpRequest.onreadystatechange = function () {
+        if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+          var responseData = JSON.parse(xmlHttpRequest.responseText).data;
+          bqAmtText = responseData.bqAmt;
+          dateTitle =
+            responseData.year +
+            "年" +
+            responseData.month +
+            "月" +
+            responseData.day +
+            "日";
+        }
+      };
+    }
+
+    //创建XHR对象
+    function createXmlHttpRequest() {
+      if (window.ActiveXObject) {
+        console.log("ie浏览器");
+        //如果是IE浏览器
+        return new ActiveXObject("Microsoft.XMLHTTP");
+      } else if (window.XMLHttpRequest) {
+        //非IE浏览器
+        return new XMLHttpRequest();
+      }
+    }
+
+    function getRightText(maxDate) {
+      var xmlHttpRequest = createXmlHttpRequest();
+      xmlHttpRequest.open(
+        "POST",
+        "http://" +
+          window.location.host +
+          "/micro_api/tax_server/embed/get/right/text",
+        true
+      );
+      xmlHttpRequest.setRequestHeader(
+        "Content-Type",
+        "application/json; charset=utf-8"
+      );
+      var req = {
+        rq: maxDate,
+      };
+      xmlHttpRequest.send(JSON.stringify(req));
+      xmlHttpRequest.onreadystatechange = function () {
+        if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+          var resData = JSON.parse(xmlHttpRequest.responseText).data;
+          sssr = resData.bqAA101;
+          fssr = resData.bqAB103;
+        }
+      };
+    }
+
+    function getAnnular(maxDate) {
+      var xmlHttpRequest = createXmlHttpRequest();
+      xmlHttpRequest.open(
+        "POST",
+        "http://" +
+          window.location.host +
+          "/micro_api/tax_server/embed/get/right/annular",
+        true
+      );
+      xmlHttpRequest.setRequestHeader(
+        "Content-Type",
+        "application/json; charset=utf-8"
+      );
+      var req = {
+        rq: maxDate,
+      };
+      xmlHttpRequest.send(JSON.stringify(req));
+      xmlHttpRequest.onreadystatechange = function () {
+        if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+          var resData = JSON.parse(xmlHttpRequest.responseText).data;
+          pieUpdate(resData);
+        }
+      };
+    }
+
+    function pieUpdate(data) {
+      var colorList = [
+        "#0052D9",
+        "#1A63DC",
+        "#3374E0",
+        "#4D86E4",
+        "#6697E8",
+        "#80A8EC",
+        "#99B9EF",
+        "#B3CBF3",
+        "#CCDCF7",
+        "#ECF2FE",
+        "#0052D9",
+        "#1A63DC",
+        "#3374E0",
+        "#4D86E4",
+        "#6697E8",
+        "#80A8EC",
+        "#99B9EF",
+        "#B3CBF3",
+        "#CCDCF7",
+        "#ECF2FE",
+      ];
+      var pieData = [];
+      var pieData2 = [];
+      for (var i = 0; i < data.inner.length; i++) {
+        var item = data.inner[i];
+        pieData.push({
+          name: item.kjgnflmc,
+          value: item.bqAmt,
+          zb: item.zb,
+          itemStyle: {
+            color: colorList[i]
+          }
+        });
+      }
+      for (var i = 0; i < data.outer.length; i++) {
+        var item = data.outer[i];
+        pieData2.push({
+          name: item.kjgnflmc,
+          value: item.bqAmt,
+          zb: item.zb
+        });
+      }
+      var myChart = echarts.init(document.getElementById("chart3"));
+      var option = {
+        title: {
+          show: true,
+          text: "税收收入" + sssr + "亿元" + "\n" + "非税收入" + fssr + "亿元",
+          bottom: "0",
+          left: "center",
+          textStyle: {
+            fontSize: 12,
+            fontWeight: "normal"
+          }
+        },
+        legend: {
+          show: true,
+          top: "top",
+          left: "center",
+          data: ["非税收入", "税收收入"],
+          itemWidth: 10,
+          itemHeight: 10,
+          borderRadius: 10,
+          icon: "circle"
+        },
+        series: [
+          {
+            name: "",
+            type: "pie",
+            selectedMode: "multiple",
+            radius: ["20%", "35%"],
+            center: ["50%", "50%"],
+            data: pieData2,
+            label: {
+              show: false
+            },
+            itemStyle: {
+              color: function (colors) {
+                var colorList = ["#0052D9", "#00A870"];
+                return colorList[colors.dataIndex];
+              }
+            }
+          },
+          {
+            name: "",
+            type: "pie",
+            selectedMode: "multiple",
+            radius: ["45%", "65%"],
+            center: ["50%", "50%"],
+            label: {
+              show: false
+            },
+            data: pieData
+          },
+        ],
+        tooltip: [
+          {
+            confine: false,
+            padding: [10, 10, 10, 10],
+            show: true,
+            trigger: "item",
+            formatter: function (param) {
+              var tooltipStr = param.name + "<br>";
+              tooltipStr +=
+                "本年累计（万元）:" + formatNumber(param.value, 0) + "<br>";
+              tooltipStr += "占比（%）:" + formatPercent(param.data.zb, 0);
+              return tooltipStr;
+            },
+          },
+        ],
+      };
+      myChart.setOption(option);
+      window.onresize = function () {
+        if (myChart) {
+          myChart.resize();
+        }
+      };
+    }
+
+    function getMap(maxDate) {
+      var xmlHttpRequest = createXmlHttpRequest();
+      xmlHttpRequest.open(
+        "POST",
+        "http://" +
+          window.location.host +
+          "/micro_api/tax_server/embed/get/left/map",
+        true
+      );
+      xmlHttpRequest.setRequestHeader(
+        "Content-Type",
+        "application/json; charset=utf-8"
+      );
+      var req = {
+        rq: maxDate,
+      };
+      xmlHttpRequest.send(JSON.stringify(req));
+      xmlHttpRequest.onreadystatechange = function () {
+        if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+          var resData = JSON.parse(xmlHttpRequest.responseText).data;
+          barUpdate(resData);
+          mapUpdate(resData);
+        }
+      };
+    }
+
+    function mapUpdate(resData) {
+      var xmlHttpRequest = createXmlHttpRequest();
+      xmlHttpRequest.open("GET", "./zhejiang.json");
+      xmlHttpRequest.setRequestHeader(
+        "Content-Type",
+        "application/json; charset=utf-8"
+      );
+      xmlHttpRequest.send();
+      xmlHttpRequest.onreadystatechange = function () {
+        if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+          var jsonData = JSON.parse(xmlHttpRequest.responseText);
+          var mapData = [];
+          var bqAmt = [];
+          for (var i = 0; i < resData.length; i++) {
+            var item = resData[i];
+            mapData.push({
+              value: item.bqAmt,
+              name: item.rgName,
+              ysjd: item.ysjd,
+              rgCode: item.rgCode
+            });
+            bqAmt.push(item.bqAmt);
+          }
+          var sortArr = bqAmt.sort(function (a, b) {
+            return a - b;
+          });
+          var min = sortArr[0];
+          var max = sortArr[sortArr.length - 1];
+          var myChart = echarts.init(document.getElementById("chart1"));
+          var option = {
+            title: {
+              show: true,
+              text:
+                "截至" +
+                dateTitle +
+                "," +
+                "全省一" +
+                "\n" +
+                "般公共预算收入" +
+                bqAmtText +
+                "亿元",
+              bottom: "0",
+              left: "center",
+              textStyle: {
+                fontSize: 12,
+                fontWeight: "normal"
+              }
+            },
+            tooltip: {
+              confine: true,
+              // position: ["50%", "50%"],
+              trigger: "item",
+              formatter: function (params) {
+                var str = params.name + "<br>";
+                str +=
+                  "本年累计（万元）：" + formatNumber(params.value) + "<br>";
+                str += "完成进度（%）：" + formatPercent(params.data.ysjd);
+                return str;
+              },
+            },
+            visualMap: {
+              show: false,
+              type: "continuous",
+              min: min,
+              max: max,
+              left: "left",
+              top: "bottom",
+              text: ["高", "低"],
+              textStyle: {
+                color: "#00000099"
+              },
+              calculable: true,
+              inRange: {
+                color: [
+                  "#bbd3fb",
+                  "#96bbf8",
+                  "#699ef5",
+                  "#4787f0",
+                  "#266fe8",
+                  "#0052d9",
+                  "#0034b5"
+                ]
+              }
+            },
+            series: [
+              {
+                type: "map",
+                map: "map",
+                selectedMode: "single",
+                aspectScale: 1, //长宽比
+                showLegendSymbol: false, // 存在legend时显示
+                label: {
+                  show: true,
+                  fontSize: 12,
+                  fontWeight: 400,
+                  color: "#333333"
+                },
+                // roam: true,
+                itemStyle: {
+                  borderColor: "#fff",
+                  areaColor: "#fff"
+                },
+                emphasis: {
+                  label: {
+                    show: true,
+                    fontSize: 12,
+                    fontWeight: 400,
+                    color: "#ed7b2f"
+                  },
+                  itemStyle: {
+                    areaColor: "#f7c797"
+                  }
+                },
+                select: {
+                  label: {
+                    show: true,
+                    fontSize: 12,
+                    fontWeight: 400,
+                    color: "#ed7b2f"
+                  },
+                  itemStyle: {
+                    areaColor: "#f7c797"
+                  }
+                },
+                animation: false,
+                data: mapData
+              }
+            ],
+          };
+          echarts.registerMap("map", jsonData);
+          myChart.setOption(option);
+          window.onresize = function () {
+            if (myChart) {
+              myChart.resize();
+            }
+          };
+        }
+      };
+    }
+
+    function barUpdate(resData) {
+      var barData = [];
+      var yAxisData = [];
+      for (var i = 0; i < resData.length; i++) {
+        var item = resData[i];
+        barData.push({
+          value: item.bqAmt,
+          name: item.rgName,
+          ysjd: item.ysjd,
+          rgCode: item.rgCode,
+        });
+        yAxisData.unshift(item.rgName);
+      }
+      barData.sort(function (a, b) {
+        if (a.xzsl < b.xzsl) {
+          return 1;
+        } else {
+          return -1;
+        }
+      });
+      var myChart = echarts.init(document.getElementById("chart2"));
+      var option = {
+        tooltip: {
+          confine: true,
+          trigger: "item",
+          formatter: function (params) {
+            var str = params.name + "<br>";
+            str += "本年累计（万元）：" + formatNumber(params.value) + "<br>";
+            str += "完成进度（%）：" + formatPercent(params.data.ysjd);
+            return str;
+          },
+        },
+        grid: {
+          left: "3%",
+          right: "33%",
+          bottom: "3%",
+          top: "20%",
+          containLabel: true
+        },
+        xAxis: {
+          type: "value",
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          },
+          axisLabel: { show: false },
+          splitLine: { show: false }
+        },
+        yAxis: {
+          name: "单位:（万元）",
+          type: "category",
+          data: yAxisData,
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          }
+        },
+        series: [
+          {
+            barMaxWidth: 15,
+            selectedMode: "single",
+            type: "bar",
+            label: {
+              show: true,
+              fontSize: 12,
+              fontWeight: 400,
+              color: "#00000099",
+              position: "right"
+            },
+            itemStyle: {
+              barBorderRadius: 8,
+              color: {
+                type: "linear",
+                x: 1,
+                y: 0,
+                x2: 0,
+                y2: 0,
+                colorStops: [
+                  {
+                    offset: 0,
+                    color: "#1067ee"
+                  },
+                  {
+                    offset: 1,
+                    color: "#36c0ec"
+                  },
+                ],
+                global: false
+              }
+            },
+            emphasis: {
+              itemStyle: {
+                color: {
+                  type: "linear",
+                  x: 1,
+                  y: 0,
+                  x2: 0,
+                  y2: 0,
+                  colorStops: [
+                    {
+                      offset: 0,
+                      color: "#ed7b2f"
+                    },
+                    {
+                      offset: 1,
+                      color: "#f7b25c"
+                    },
+                  ],
+                  global: false
+                }
+              }
+            },
+            select: {
+              itemStyle: {
+                borderWidth: 0,
+                color: {
+                  type: "linear",
+                  x: 1,
+                  y: 0,
+                  x2: 0,
+                  y2: 0,
+                  colorStops: [
+                    {
+                      offset: 0,
+                      color: "#ed7b2f"
+                    },
+                    {
+                      offset: 1,
+                      color: "#f7b25c"
+                    },
+                  ],
+                  global: false
+                }
+              }
+            },
+            animation: false,
+            data: barData,
+          },
+        ],
+      };
+      myChart.setOption(option);
+      window.onresize = function () {
+        if (myChart) {
+          myChart.resize();
+        }
+      };
+    }
+
+    function formatNumber(num, num2) {
+      var data = new Intl.NumberFormat("en", {
+        minimumFractionDigits: num2,
+        maximumFractionDigits: num2,
+      }).format(num);
+      return data;
+    }
+
+    function formatPercent(s, n) {
+      if (isNaN(s)) {
+        return "_";
+      } else {
+        var str = Number(s).toFixed(n);
+        return str;
+      }
+    }
+  </script>
+</html>
